@@ -32,8 +32,8 @@ public class OllamaChatRequest {
 
     public OllamaChatRequest(String system, String user) {
         // 推荐默认值（决策型）
-        options.temperature = 0.1;
-        options.top_p = 0.5;
+        options.temperature = 0.2;
+        options.top_p = 0.9;
         options.num_ctx = 4096;
 
         messages.add(Message.system(system));
@@ -59,8 +59,11 @@ public class OllamaChatRequest {
             this.content = content;
         }
 
+//        全局规则
         public static Message system(String content) { return new Message("system", content); }
+//        当前输入
         public static Message user(String content) { return new Message("user", content); }
+//        历史模型输出
         public static Message assistant(String content) { return new Message("assistant", content); }
     }
 
