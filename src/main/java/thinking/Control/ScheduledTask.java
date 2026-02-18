@@ -1,4 +1,4 @@
-package Control;
+package thinking.Control;
 
 import java.util.concurrent.atomic.AtomicLong;
 

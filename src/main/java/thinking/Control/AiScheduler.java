@@ -1,4 +1,6 @@
-package Control;
+package thinking.Control;
+
+import eventbus.EventBus;
 
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
@@ -7,9 +9,18 @@ import java.util.concurrent.atomic.AtomicReference;
 public class AiScheduler {
     private final PriorityBlockingQueue<ScheduledTask> queue = new PriorityBlockingQueue<>();
     private final AtomicReference<ScheduledTask> running = new AtomicReference<>(null);
+
+//    负责订阅事件
+    AICommWorker commWorker = new AICommWorker(this);
+
+    public AiScheduler() {
+        EventBus.subscribe(commWorker);
+        Thread commThread = new Thread(commWorker, "ai-worker");
+        commThread.start();
+    }
+
 //    事件加入队列
     public void submit(ScheduledTask t) {
-        System.out.println("队列新增任务");
         queue.put(t);
 
         // 抢占逻辑：如果新任务优先级更高，中断当前任务

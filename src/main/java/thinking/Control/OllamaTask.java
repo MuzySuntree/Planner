@@ -1,8 +1,8 @@
-package Control;
+package thinking.Control;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import model.OllamaChatRequest;
+import thinking.model.OllamaChatRequest;
 import okhttp3.*;
 
 import java.io.BufferedReader;

@@ -1,22 +1,16 @@
-import Control.AiScheduler;
-import Control.CommWorker;
-import Control.SchedulerEventBus;
-import Control.SchedulerEventProducer;
+import scheduler.control.Scheduler;
+import thinking.Control.AiScheduler;
 
 public class Main {
     public static void main(String[] args) {
         AiScheduler scheduler = new AiScheduler();
-        SchedulerEventBus eventBus = new SchedulerEventBus();
 
-        CommWorker commWorker = new CommWorker(scheduler);
-        eventBus.subscribe(commWorker);
-
+//        AI大脑线程
         Thread aiThread = new Thread(scheduler::runLoop, "ai-worker");
-        Thread commThread = new Thread(commWorker, "comm-worker");
-        Thread schedulerEventThread = new Thread(new SchedulerEventProducer(eventBus), "scheduler-event-producer");
+//        调度器线程
+        Thread schedulerThread = new Thread(new Scheduler(), "scheduler");
 
         aiThread.start();
-        commThread.start();
-        schedulerEventThread.start();
+        schedulerThread.start();
     }
 }
