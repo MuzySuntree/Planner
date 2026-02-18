@@ -19,7 +19,8 @@ public class AICommWorker implements Runnable, Consumer<Event> {
 
     @Override
     public void accept(Event event) {
-        if(!(event.content() instanceof AIEvent aiEvent)) return;
+        if (event.topic() != Event.Topic.AI_EVENT) return;
+        if (!(event.content() instanceof AIEvent aiEvent)) return;
         incomingEvents.offer(aiEvent);
     }
 
