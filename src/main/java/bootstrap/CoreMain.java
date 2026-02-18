@@ -1,7 +1,9 @@
 package bootstrap;
 
 import eventbus.EventBus;
+import eventbus.InMemoryEventBus;
 import scheduler.control.Scheduler;
+import statehub.StateHub;
 import thinking.Control.AiScheduler;
 import thinking.model.AIEvent;
 import thinking.model.Event;
@@ -9,13 +11,18 @@ import thinking.model.SchedulerDecisionEvent;
 import thinking.model.SchedulerStatusEvent;
 
 /**
- * Core 启动入口：不再使用 brain 包，直接使用 thinking.Control 作为 AI 连接模块。
- * 只需要向 EventBus 发布 AI_EVENT，即可收到 AI_RESPONSE 并由 Scheduler 处理为决策与状态事件。
+ * Core 启动入口：
+ * 1) 启动 AI 链路（thinking.Control + scheduler.control）
+ * 2) 启动 StateHub(Netty:9000)，供 ConsoleOrganMain 连接
  */
 public class CoreMain {
-    public static void main(String[] args) {
-        AiScheduler aiScheduler = new AiScheduler();
+    public static void main(String[] args) throws Exception {
+        // 启动 StateHub，避免 ConsoleOrganMain 连接 9000 被拒绝
+        InMemoryEventBus stateHubBus = new InMemoryEventBus();
+        StateHub stateHub = new StateHub(stateHubBus, 9000);
+        stateHub.start();
 
+        AiScheduler aiScheduler = new AiScheduler();
         Thread aiThread = new Thread(aiScheduler::runLoop, "ai-loop");
         Thread schedulerThread = new Thread(new Scheduler(), "scheduler");
 
@@ -32,6 +39,11 @@ public class CoreMain {
         aiThread.start();
         schedulerThread.start();
 
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            stateHub.stop();
+            stateHubBus.close();
+        }));
+
         // 示例：只需发布 AI_EVENT
         EventBus.publish(new Event(
                 Event.Topic.AI_EVENT,
@@ -41,5 +53,8 @@ public class CoreMain {
                         "请创建一个任务：明天上午9点提醒我开周会"
                 )
         ));
+
+        // 保持主线程存活，便于外部 ConsoleOrganMain 随后接入
+        Thread.currentThread().join();
     }
 }

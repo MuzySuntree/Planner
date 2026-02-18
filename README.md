@@ -19,11 +19,13 @@
 - 输出：`AiScheduler` 会发布 `AI_RESPONSE_EVENT`，随后 `scheduler.control.Scheduler` 将其解析为决策并发布状态事件。
 
 ## 启动
-### AI 调度链路（推荐）
+### AI 调度链路（推荐，已内置启动 StateHub:9000）
 ```bash
 mvn -q -DskipTests compile
 java -cp target/classes bootstrap.CoreMain
 ```
+
+> `CoreMain` 会保持运行并监听 `9000`，可随后启动 `ConsoleOrganMain` 接入。
 
 ### 传统入口（等价）
 ```bash

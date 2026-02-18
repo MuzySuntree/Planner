@@ -59,9 +59,25 @@ public class EarMouthConsoleOrgan {
                     }
                 });
 
-        channel = bootstrap.connect(host, port).sync().channel();
+        channel = connectWithRetry(bootstrap, 10, 500);
         register();
         startReadLoop();
+    }
+
+    private Channel connectWithRetry(Bootstrap bootstrap, int maxAttempts, long sleepMs) throws InterruptedException {
+        Throwable last = null;
+        for (int i = 1; i <= maxAttempts; i++) {
+            try {
+                Channel ch = bootstrap.connect(host, port).sync().channel();
+                System.out.printf("[ConsoleOrgan] connected to %s:%d (attempt %d/%d)%n", host, port, i, maxAttempts);
+                return ch;
+            } catch (Exception e) {
+                last = e;
+                System.out.printf("[ConsoleOrgan] connect failed to %s:%d (attempt %d/%d), retrying...%n", host, port, i, maxAttempts);
+                Thread.sleep(sleepMs);
+            }
+        }
+        throw new RuntimeException("Unable to connect StateHub at " + host + ":" + port, last);
     }
 
     private void register() {
