@@ -1,6 +1,8 @@
 package thinking.Control;
 
 import eventbus.EventBus;
+import thinking.model.AIResponseEvent;
+import thinking.model.Event;
 
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
@@ -10,7 +12,7 @@ public class AiScheduler {
     private final PriorityBlockingQueue<ScheduledTask> queue = new PriorityBlockingQueue<>();
     private final AtomicReference<ScheduledTask> running = new AtomicReference<>(null);
 
-//    负责订阅事件
+    //    负责订阅事件
     AICommWorker commWorker = new AICommWorker(this);
 
     public AiScheduler() {
@@ -19,7 +21,7 @@ public class AiScheduler {
         commThread.start();
     }
 
-//    事件加入队列
+    //    事件加入队列
     public void submit(ScheduledTask t) {
         queue.put(t);
 
@@ -29,7 +31,8 @@ public class AiScheduler {
             cur.task.interrupt();
         }
     }
-//    队列按优先级执行
+
+    //    队列按优先级执行
     public void runLoop() {
         while (!Thread.currentThread().isInterrupted()) {
             try {
@@ -41,9 +44,14 @@ public class AiScheduler {
                 if (!finished) {
                     // 被中断：重新入队等待恢复（优先级保持不变）
                     queue.put(next);
-                }else {
+                } else {
+                    String response = next.task.full.toString();
                     System.out.println("完成:");
-                    System.out.println(next.task.full.toString());
+                    System.out.println(response);
+                    EventBus.publish(new Event(
+                            Event.Topic.AI_RESPONSE_EVENT,
+                            new AIResponseEvent(next.priority, response)
+                    ));
                 }
 
                 running.set(null);
