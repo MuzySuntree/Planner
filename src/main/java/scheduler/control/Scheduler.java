@@ -31,6 +31,7 @@ public class Scheduler implements Runnable, Consumer<Event> {
     @Override
     public void run() {
         EventBus.subscribe(this);
+
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 AIResponseEvent aiResponse = incoming.take();

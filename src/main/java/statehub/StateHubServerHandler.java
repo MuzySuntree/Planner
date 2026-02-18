@@ -1,8 +1,11 @@
 package statehub;
 
 import common.Envelope;
+import common.EventTypes;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+
+import java.util.Objects;
 
 public class StateHubServerHandler extends SimpleChannelInboundHandler<String> {
     private final StateHub stateHub;

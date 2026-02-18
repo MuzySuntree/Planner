@@ -94,14 +94,16 @@ public class StateHub {
         switch (envelope.eventType()) {
             case EventTypes.ORGAN_REGISTER -> handleRegister(channel, envelope);
             case EventTypes.ORGAN_RESULT -> handleResult(envelope);
-            case EventTypes.ORGAN_TELEMETRY -> eventBus.publish(EnvelopeFactory.of(
-                    EventTypes.BRAIN_USER_COMMAND,
-                    "statehub",
-                    "brain",
-                    envelope.correlationId(),
-                    null,
-                    new Payloads.UserCommand(envelope.payload().path("data").path("text").asText())
-            ));
+            case EventTypes.ORGAN_TELEMETRY ->{
+                eventBus.publish(EnvelopeFactory.of(
+                        EventTypes.BRAIN_USER_COMMAND,
+                        "statehub",
+                        "brain",
+                        envelope.correlationId(),
+                        null,
+                        new Payloads.UserCommand(envelope.payload().path("data").path("text").asText())
+                ));
+            }
             default -> System.out.println("[StateHub] unknown eventType from organ: " + envelope.eventType());
         }
     }
