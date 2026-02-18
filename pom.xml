@@ -38,15 +38,12 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
-                    <excludes>
-                        <exclude>Main.java</exclude>
-                        <exclude>thinking/**</exclude>
-                        <exclude>scheduler/control/**</exclude>
-                        <exclude>eventbus/EventBus.java</exclude>
-                    </excludes>
+                    <release>17</release>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+
+    
 
 </project>

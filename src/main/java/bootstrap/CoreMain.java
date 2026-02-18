@@ -1,54 +1,45 @@
 package bootstrap;
 
-import brain.BrainStub;
-import common.EnvelopeFactory;
-import common.EventTypes;
-import common.Payloads;
-import eventbus.InMemoryEventBus;
-import scheduler.SchedulerEngine;
-import statehub.StateHub;
-
-import java.util.concurrent.atomic.AtomicBoolean;
+import eventbus.EventBus;
+import scheduler.control.Scheduler;
+import thinking.Control.AiScheduler;
+import thinking.model.AIEvent;
+import thinking.model.Event;
+import thinking.model.SchedulerDecisionEvent;
+import thinking.model.SchedulerStatusEvent;
 
 /**
- * Brain + Scheduler + StateHub 同进程演示入口。
+ * Core 启动入口：不再使用 brain 包，直接使用 thinking.Control 作为 AI 连接模块。
+ * 只需要向 EventBus 发布 AI_EVENT，即可收到 AI_RESPONSE 并由 Scheduler 处理为决策与状态事件。
  */
 public class CoreMain {
-    public static void main(String[] args) throws Exception {
-        InMemoryEventBus bus = new InMemoryEventBus();
-        AtomicBoolean stopFlag = new AtomicBoolean(false);
+    public static void main(String[] args) {
+        AiScheduler aiScheduler = new AiScheduler();
 
-        StateHub stateHub = new StateHub(bus, 9000);
-        stateHub.start();
+        Thread aiThread = new Thread(aiScheduler::runLoop, "ai-loop");
+        Thread schedulerThread = new Thread(new Scheduler(), "scheduler");
 
-        BrainStub brain = new BrainStub(bus, stopFlag);
-        brain.start();
-
-        SchedulerEngine scheduler = new SchedulerEngine(bus);
-        scheduler.start();
-
-        bus.subscribe(EventTypes.SCHEDULER_OUTPUT, env -> {
-            Payloads.SchedulerOutput output = common.Jsons.MAPPER.convertValue(env.payload(), Payloads.SchedulerOutput.class);
-            System.out.println(output.text());
+        EventBus.subscribe(event -> {
+            if (event.content() instanceof SchedulerDecisionEvent decision) {
+                System.out.printf("[Decision] action=%s target=%s value=%s priority=%d%n",
+                        decision.action(), decision.target(), decision.value(), decision.priority());
+            } else if (event.content() instanceof SchedulerStatusEvent status) {
+                System.out.printf("[Status] action=%s target=%s status=%s detail=%s%n",
+                        status.action(), status.target(), status.status(), status.detail());
+            }
         });
 
-        // 演示启动消息
-        bus.publish(EnvelopeFactory.of(EventTypes.SCHEDULER_OUTPUT, "core", "earmouth-console", EnvelopeFactory.newCorrelationId(), null,
-                new Payloads.SchedulerOutput("系统已启动，请在 ConsoleOrgan 侧输入 help/echo/exit")));
+        aiThread.start();
+        schedulerThread.start();
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            stateHub.printSnapshot();
-            stateHub.stop();
-            bus.close();
-        }));
-
-        while (!stopFlag.get()) {
-            Thread.sleep(300);
-        }
-
-        stateHub.printSnapshot();
-        stateHub.stop();
-        bus.close();
-        System.exit(0);
+        // 示例：只需发布 AI_EVENT
+        EventBus.publish(new Event(
+                Event.Topic.AI_EVENT,
+                new AIEvent(
+                        10,
+                        "你是调度决策助手，只输出 JSON，字段为 action/target/value。",
+                        "请创建一个任务：明天上午9点提醒我开周会"
+                )
+        ));
     }
 }
