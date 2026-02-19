@@ -1,6 +1,6 @@
 package eventbus;
 
-import thinking.model.Event;
+import eventbus.model.Event;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;

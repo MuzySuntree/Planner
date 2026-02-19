@@ -148,4 +148,10 @@ public class OllamaTask {
         }
     }
 
+    public StringBuilder getFull() {
+        return this.full;
+    }
+    public void setFull(StringBuilder full) {
+        this.full = full;
+    }
 }

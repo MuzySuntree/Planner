@@ -1,25 +1,29 @@
-package thinking.Control;
+package eventbus.worker;
 
-import thinking.model.AIEvent;
-import thinking.model.Event;
+import eventbus.model.EventSchedulerToAI;
+import scheduler.AiScheduler;
+import thinking.Control.OllamaTask;
+import eventbus.task.EventTask_AIScheduled;
+import eventbus.model.Event;
 import thinking.model.OllamaChatRequest;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.Consumer;
 
-public class AICommWorker implements Runnable, Consumer<Event> {
+//AI订阅调度器
+public class CommWorkerAISubscribeScheduler implements Runnable, Consumer<Event> {
 
     private final AiScheduler scheduler;
-    private final BlockingQueue<AIEvent> incomingEvents = new LinkedBlockingQueue<>();
+    private final BlockingQueue<EventSchedulerToAI> incomingEvents = new LinkedBlockingQueue<>();
 
-    public AICommWorker(AiScheduler scheduler) {
+    public CommWorkerAISubscribeScheduler(AiScheduler scheduler) {
         this.scheduler = scheduler;
     }
 
     @Override
     public void accept(Event event) {
-        if(!(event.content() instanceof AIEvent aiEvent)) return;
+        if(!(event.content() instanceof EventSchedulerToAI aiEvent)) return;
         incomingEvents.offer(aiEvent);
     }
 
@@ -27,10 +31,10 @@ public class AICommWorker implements Runnable, Consumer<Event> {
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                AIEvent aiEvent = incomingEvents.take();
+                EventSchedulerToAI aiEvent = incomingEvents.take();
                 var chat = new OllamaChatRequest(aiEvent.systemPrompt(), aiEvent.userPrompt());
                 var task = new OllamaTask(chat);
-                scheduler.submit(new ScheduledTask(aiEvent.priority(), task));
+                scheduler.submit(new EventTask_AIScheduled(aiEvent.priority(), task));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
