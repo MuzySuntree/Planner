@@ -6,11 +6,11 @@ import eventbus.SchedulerInterface;
 
 public class Main {
     public static void main(String[] args) {
-        SchedulerInterface<EventTask_AIScheduled> aiScheduler = new AiScheduler();
+        SchedulerInterface aiScheduler = new AiScheduler();
 //        AI大脑线程
         Thread aiThread = new Thread(aiScheduler::runLoop, "ai-worker");
 
-        SchedulerInterface<EventTask_Scheduled> scheduler = new Scheduler();
+        SchedulerInterface scheduler = new Scheduler();
 //        调度器线程
         Thread schedulerThread = new Thread(scheduler::runLoop, "scheduler");
 

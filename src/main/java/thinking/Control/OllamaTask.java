@@ -4,12 +4,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import thinking.model.OllamaChatRequest;
 import okhttp3.*;
+import thinking.model.OllamaResult;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class OllamaTask {
     private static final String OLLAMA_URL = "http://localhost:14735/api/chat";
@@ -19,42 +22,10 @@ public class OllamaTask {
     OkHttpClient client;
     OllamaChatRequest chat;
     StringBuilder full= new StringBuilder();
+    AtomicBoolean canceled;
+    Call call;
     public OllamaTask() {
         client = new OkHttpClient();
-    }
-    public enum TaskState {
-        PENDING,
-        RUNNING,
-        INTERRUPTED,
-        FINISHED;
-//        状态机规则
-        private static final Map<TaskState, Set<TaskState>> ALLOWED = new EnumMap<>(TaskState.class);
-        static {
-            ALLOWED.put(PENDING, EnumSet.of(RUNNING));
-            ALLOWED.put(RUNNING, EnumSet.of(INTERRUPTED,FINISHED));
-            ALLOWED.put(INTERRUPTED, EnumSet.of(RUNNING,FINISHED));
-            ALLOWED.put(FINISHED, EnumSet.noneOf(TaskState.class));
-        }
-        public boolean canTransitionTo(TaskState next) {
-            return ALLOWED.getOrDefault(this, EnumSet.noneOf(TaskState.class)).contains(next);
-        }
-    }
-    private volatile TaskState taskState;
-    private final Object stateLock = new Object();
-    public void setTaskState(TaskState next) {
-        if(next == null) throw  new IllegalArgumentException("要达到的下一个状态不存在");
-        synchronized(stateLock) {
-            TaskState prev = taskState;
-//            如果当前无状态，则默认为就绪状态
-            if(prev == null) prev = TaskState.PENDING;
-//            幂等，重复设置不报错
-            if(prev == next) return;
-//            检验状态跳转是否符合规则
-            if(!prev.canTransitionTo(next)){
-                throw new IllegalStateException("状态跳转非法：" + prev + "->" + next);
-            }
-            this.taskState = next;
-        }
     }
 
     public OllamaTask(OllamaChatRequest chat) {
@@ -66,20 +37,19 @@ public class OllamaTask {
                 .writeTimeout(Duration.ofSeconds(30))
                 .build();
         this.chat = chat;
-        setTaskState(TaskState.PENDING);
     }
 //    获取答案
-    public boolean getAnswer() throws Exception {
-        if (taskState == TaskState.INTERRUPTED && !full.isEmpty()) {
+    public OllamaResult getAnswer() throws IOException {
+        if (canceled.get()) {
             ensureSingleResumePrompt();
+            canceled.set(false);
         }
-        setTaskState(TaskState.RUNNING);
         String payload = MAPPER.writeValueAsString(this.chat);
         Request request = new Request.Builder()
                 .url(OLLAMA_URL)
                 .post(RequestBody.create(payload, MediaType.parse("application/json")))
                 .build();
-        Call call = client.newCall(request);
+        call = client.newCall(request);
         try (Response resp = call.execute()) {
             if (!resp.isSuccessful()) {
                 throw new RuntimeException("HTTP " + resp.code() + ": " + (resp.body() == null ? "" : resp.body().string()));
@@ -93,18 +63,17 @@ public class OllamaTask {
                 String line;
                 while ((line = br.readLine()) != null) {
 //                    中断开关
-                    if(taskState == TaskState.INTERRUPTED) {
+                    if(canceled.get()) {
                         if(!turnDelta.isEmpty()){
                             this.chat.addAssistant(turnDelta.toString());
                         }
                         call.cancel();
-                        return false;
+                        return new OllamaResult(false,true,turnDelta.toString());
                     }
 
                     if (line.isBlank()) continue;
 
                     JsonNode json = MAPPER.readTree(line);
-
                     // 增量片段
                     String delta = json.path("message").path("content").asText("");
                     if (!delta.isEmpty()) {
@@ -113,7 +82,6 @@ public class OllamaTask {
 
                     // 结束标志
                     if (json.path("done").asBoolean(false)) {
-                        setTaskState(TaskState.FINISHED);
                         if(!turnDelta.isEmpty()){
                             full = turnDelta;
                         }
@@ -122,15 +90,21 @@ public class OllamaTask {
                 }
             }catch (Exception e){
 //                interrupt中断造成的异常不算错误
-                if (taskState != TaskState.INTERRUPTED) throw e;
+                if (!canceled.get()) throw e;
             }
         }
-        return true;
+        return new OllamaResult(true,false,full.toString());
     }
 //    设置中断
     public void interrupt() {
-        setTaskState(TaskState.INTERRUPTED);
+        Call call = this.call;
+        if(call != null) {
+//            将堵塞在读数据的call强制唤醒并取消当前进程
+            call.cancel();
+        }
+        canceled.set(true);
     }
+
 //    恢复对话指令
     private void ensureSingleResumePrompt() {
         List<OllamaChatRequest.Message> msgs = chat.messages;
@@ -146,12 +120,5 @@ public class OllamaTask {
         if (!("user".equals(last.role) && interruptString.equals(last.content))) {
             chat.addUser(interruptString);
         }
-    }
-
-    public StringBuilder getFull() {
-        return this.full;
-    }
-    public void setFull(StringBuilder full) {
-        this.full = full;
     }
 }

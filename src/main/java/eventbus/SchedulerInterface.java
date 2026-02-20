@@ -1,6 +1,8 @@
 package eventbus;
 
-public interface SchedulerInterface<T> {
+import eventbus.task.configure.EventTask;
+
+public interface SchedulerInterface {
     void runLoop();
-    void submit(T t);
+    void submit(EventTask t);
 }

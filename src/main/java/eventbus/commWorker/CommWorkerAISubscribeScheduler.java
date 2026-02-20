@@ -1,5 +1,6 @@
-package eventbus.worker;
+package eventbus.commWorker;
 
+import eventbus.SchedulerInterface;
 import eventbus.model.EventSchedulerToAI;
 import scheduler.AiScheduler;
 import thinking.Control.OllamaTask;
@@ -14,7 +15,7 @@ import java.util.function.Consumer;
 //AI订阅调度器
 public class CommWorkerAISubscribeScheduler implements Runnable, Consumer<Event> {
 
-    private final AiScheduler scheduler;
+    private final SchedulerInterface scheduler;
     private final BlockingQueue<EventSchedulerToAI> incomingEvents = new LinkedBlockingQueue<>();
 
     public CommWorkerAISubscribeScheduler(AiScheduler scheduler) {

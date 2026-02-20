@@ -1,7 +1,9 @@
-package eventbus.worker;
+package eventbus.commWorker;
 
+import eventbus.SchedulerInterface;
 import eventbus.model.Event;
 import eventbus.model.EventAIToScheduler;
+import eventbus.model.EventStateToScheduler;
 import scheduler.Scheduler;
 import eventbus.task.EventTask_Scheduled;
 import thinking.Control.OllamaTask;
@@ -14,7 +16,7 @@ import java.util.function.Consumer;
 //调度器订阅AI
 public class CommWorkerSchedulerSubscribeAI implements Runnable, Consumer<Event> {
     private final BlockingQueue<EventAIToScheduler> incomingEvents = new LinkedBlockingQueue<>();
-    private final Scheduler scheduler;
+    private final SchedulerInterface scheduler;
 
     public CommWorkerSchedulerSubscribeAI(Scheduler scheduler) {
         this.scheduler = scheduler;
@@ -24,10 +26,9 @@ public class CommWorkerSchedulerSubscribeAI implements Runnable, Consumer<Event>
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                EventAIToScheduler aiEvent = incomingEvents.take();
-                var chat = new OllamaChatRequest(aiEvent.systemPrompt(), aiEvent.userPrompt());
-                var task = new OllamaTask(chat);
-                scheduler.submit(new EventTask_Scheduled());
+                EventAIToScheduler eventAIToScheduler = incomingEvents.take();
+
+                scheduler.submit(new EventTask_Scheduled(EventTask_Scheduled.EventType.Event_AI));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -36,7 +37,7 @@ public class CommWorkerSchedulerSubscribeAI implements Runnable, Consumer<Event>
 
     @Override
     public void accept(Event event) {
-        if(!(event.content() instanceof EventAIToScheduler aiEvent)) return;
-        incomingEvents.offer(aiEvent);
+        if(!(event.content() instanceof EventAIToScheduler eventAIToScheduler)) return;
+        incomingEvents.offer(eventAIToScheduler);
     }
 }
