@@ -14,6 +14,9 @@ public class Main {
 //        调度器线程
         Thread schedulerThread = new Thread(scheduler::runLoop, "scheduler");
 
+//        状态模块线程
+
+
         aiThread.start();
         schedulerThread.start();
     }

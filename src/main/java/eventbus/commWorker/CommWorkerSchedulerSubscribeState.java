@@ -26,9 +26,9 @@ public class CommWorkerSchedulerSubscribeState implements Runnable, Consumer<Eve
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
             try {
-                EventStateToScheduler eventAIToScheduler = incomingEvents.take();
+                EventStateToScheduler eventStateToScheduler = incomingEvents.take();
 
-                scheduler.submit(new EventTask_Scheduled(EventTask_Scheduled.EventType.Event_State));
+                scheduler.submit(new EventTask_Scheduled(EventTask_Scheduled.EventType.Event_State, ));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -37,7 +37,7 @@ public class CommWorkerSchedulerSubscribeState implements Runnable, Consumer<Eve
 
     @Override
     public void accept(Event event) {
-        if(!(event.content() instanceof EventStateToScheduler aiEvent)) return;
-        incomingEvents.offer(aiEvent);
+        if(!(event.content() instanceof EventStateToScheduler eventStateToScheduler)) return;
+        incomingEvents.offer(eventStateToScheduler);
     }
 }

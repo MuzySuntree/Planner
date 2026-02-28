@@ -4,6 +4,7 @@ import eventbus.model.Event;
 import eventbus.model.EventAIToScheduler;
 import eventbus.task.configure.AbstractEventTask;
 import eventbus.task.configure.EventTaskState;
+import plan.Plan;
 import thinking.Control.OllamaTask;
 import thinking.model.OllamaResult;
 
@@ -26,9 +27,13 @@ public class EventTask_AIScheduled extends AbstractEventTask implements Comparab
 
     @Override
     public Optional<Event> completionEvent() {
-        return (getTaskState()==EventTaskState.FINISHED)
-                ? Optional.of(new Event(Event.Topic.EventAIToScheduler, new EventAIToScheduler()))
-                : Optional.empty();
+        if(getTaskState()==EventTaskState.FINISHED){
+            Plan plan = new Plan();
+            EventAIToScheduler res = new EventAIToScheduler(plan);
+            return Optional.of(new Event(Event.Topic.EventAIToScheduler, res));
+        }else{
+            return Optional.empty();
+        }
     }
 
     @Override

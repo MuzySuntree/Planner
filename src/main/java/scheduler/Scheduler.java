@@ -6,6 +6,7 @@ import eventbus.SchedulerInterface;
 import eventbus.commWorker.CommWorkerSchedulerSubscribeAI;
 import eventbus.commWorker.CommWorkerSchedulerSubscribeState;
 import eventbus.task.configure.EventTask;
+import eventbus.task.configure.EventTaskCallBack;
 
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,7 +37,7 @@ public class Scheduler implements SchedulerInterface {
                 EventTask next = queue.take(); // 阻塞获取最高优先级
                 running.set(next);
 
-                next.run();
+                next.runOnce();
 
                 running.set(null);
             } catch (InterruptedException e) {
@@ -51,11 +52,38 @@ public class Scheduler implements SchedulerInterface {
 
     @Override
     public void submit(EventTask t) {
+        t.setEventTaskCallBack(new EventTaskCallBack() {
+
+            @Override
+            public void onFinished(EventTask eventTask) {
+
+            }
+
+            @Override
+            public void onFailed(EventTask eventTask, Throwable throwable) {
+
+            }
+
+            @Override
+            public void onCancelled(EventTask eventTask) {
+
+            }
+
+            @Override
+            public void onInterrupt(EventTask eventTask) {
+
+            }
+
+            @Override
+            public void onInterruptRequested(EventTask eventTask) {
+
+            }
+        });
         queue.put(t);
         // 抢占逻辑：如果新任务优先级更高，中断当前任务
         EventTask cur = running.get();
         if (cur != null && t.getPriority() > cur.getPriority()) {
-            cur.interrupt();
+            cur.requestInterrupt();
         }
     }
 }

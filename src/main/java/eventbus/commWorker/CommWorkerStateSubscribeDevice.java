@@ -1,5 +1,6 @@
-package statecentre.control;
+package eventbus.commWorker;
 
+import eventbus.SchedulerInterface;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -13,13 +14,13 @@ import java.nio.charset.StandardCharsets;
 
 //状态模块
 
-public class StateServer {
+public class CommWorkerStateSubscribeDevice {
     int port = 9000;
+    SchedulerInterface scheduler;
 
-    public StateServer() {
+    public CommWorkerStateSubscribeDevice(SchedulerInterface scheduler) {
+        this.scheduler = scheduler;
 //        订阅调度器事件
-
-
         EventLoopGroup boss = new NioEventLoopGroup(1);
         EventLoopGroup worker = new NioEventLoopGroup();
 

@@ -28,7 +28,7 @@ public class CommWorkerSchedulerSubscribeAI implements Runnable, Consumer<Event>
             try {
                 EventAIToScheduler eventAIToScheduler = incomingEvents.take();
 
-                scheduler.submit(new EventTask_Scheduled(EventTask_Scheduled.EventType.Event_AI));
+                scheduler.submit(new EventTask_Scheduled(EventTask_Scheduled.EventType.Event_AI, eventAIToScheduler.plan()));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
