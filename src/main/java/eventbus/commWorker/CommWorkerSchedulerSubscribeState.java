@@ -28,7 +28,7 @@ public class CommWorkerSchedulerSubscribeState implements Runnable, Consumer<Eve
             try {
                 EventStateToScheduler eventStateToScheduler = incomingEvents.take();
 
-                scheduler.submit(new EventTask_Scheduled(EventTask_Scheduled.EventType.Event_State, ));
+                scheduler.submit(new EventTask_Scheduled(EventTask_Scheduled.EventType.Event_State, eventStateToScheduler));
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }

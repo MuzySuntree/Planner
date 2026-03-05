@@ -6,12 +6,12 @@ import java.util.List;
 public class Device {
 
 //    设备名称
-    String name;
+    public String name;
 //    设备锁
-    Object lock;
+    public Object lock;
 //    是否可用
-    boolean active;
+    public boolean active;
     //    能够做什么
-    String capability;
-    List<Action> actions;
+    public String capability;
+    public List<Action> actions;
 }

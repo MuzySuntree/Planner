@@ -3,6 +3,7 @@ import eventbus.task.EventTask_Scheduled;
 import scheduler.Scheduler;
 import scheduler.AiScheduler;
 import eventbus.SchedulerInterface;
+import scheduler.StateScheduler;
 
 public class Main {
     public static void main(String[] args) {
@@ -15,9 +16,11 @@ public class Main {
         Thread schedulerThread = new Thread(scheduler::runLoop, "scheduler");
 
 //        状态模块线程
-
+        SchedulerInterface stateScheduler = new StateScheduler();
+        Thread stateThread = new Thread(stateScheduler::runLoop, "state");
 
         aiThread.start();
         schedulerThread.start();
+        stateThread.start();
     }
 }

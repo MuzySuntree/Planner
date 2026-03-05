@@ -65,7 +65,7 @@ public class EventTask_Scheduled extends AbstractEventTask {
 
     private void handleEventState(){
         DeviceEvent deviceEvent = (DeviceEvent) payload;
-        Device device = deviceEvent.getDevice();
+        Device device = deviceEvent.device();
 
     }
 
@@ -74,7 +74,8 @@ public class EventTask_Scheduled extends AbstractEventTask {
         if(eventType == EventType.Event_AI){
             return Optional.empty();
         }else if(eventType == EventType.Event_State){
-            return Optional.of();
+            System.out.println("接收到来自状态服务器消息:"+this.payload.toString());
+            return Optional.empty();
         }
         return Optional.empty();
     }

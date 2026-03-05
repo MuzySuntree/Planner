@@ -5,9 +5,12 @@ import eventbus.EventBus;
 import eventbus.SchedulerInterface;
 import eventbus.commWorker.CommWorkerSchedulerSubscribeAI;
 import eventbus.commWorker.CommWorkerSchedulerSubscribeState;
+import eventbus.model.Event;
+import eventbus.task.EventTask_Scheduled;
 import eventbus.task.configure.EventTask;
 import eventbus.task.configure.EventTaskCallBack;
 
+import java.util.Optional;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -56,7 +59,7 @@ public class Scheduler implements SchedulerInterface {
 
             @Override
             public void onFinished(EventTask eventTask) {
-
+                Optional<Event> res =  eventTask.completionEvent();
             }
 
             @Override

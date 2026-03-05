@@ -1,15 +1,11 @@
 package device;
 
+import org.jetbrains.annotations.NotNull;
 import statecentre.model.Device;
 
-public class DeviceEvent {
-    Device device;
-
-    public Device getDevice() {
-        return device;
+public record DeviceEvent(EventType eventType, Device device) {
+    public enum EventType{
+        REGISTER
     }
 
-    public void setDevice(Device device) {
-        this.device = device;
-    }
 }
